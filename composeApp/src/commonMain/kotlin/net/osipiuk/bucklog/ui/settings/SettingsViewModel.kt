@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
@@ -15,6 +16,8 @@ import net.osipiuk.bucklog.data.SyncStatus
 import net.osipiuk.bucklog.domain.Category
 import net.osipiuk.bucklog.domain.DemoData
 import net.osipiuk.bucklog.domain.normalizeText
+import net.osipiuk.bucklog.ui.CLOSE_AFTER_ADD_KEY
+import net.osipiuk.bucklog.ui.parseCloseAfterAdd
 import net.osipiuk.bucklog.ui.AppGraph
 import net.osipiuk.bucklog.ui.LANGUAGE_KEY
 import net.osipiuk.bucklog.ui.Platform
@@ -35,6 +38,13 @@ class SettingsViewModel(private val graph: AppGraph, private val platform: Platf
             runCatching { graph.backups.backUpNow() } // failures show up in the backup status
             backingUp.value = false
         }
+    }
+
+    val closeAfterAdd = graph.store.valueFlow(CLOSE_AFTER_ADD_KEY).map(::parseCloseAfterAdd)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    fun setCloseAfterAdd(enabled: Boolean) = viewModelScope.launch {
+        graph.store.putValue(CLOSE_AFTER_ADD_KEY, enabled.toString())
     }
 
     val canAddQuickTile: Boolean get() = platform.canAddQuickTile
